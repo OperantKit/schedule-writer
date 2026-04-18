@@ -1,0 +1,96 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "schedule-writer"
+version = "0.0.0"
+description = "Builder API and CLI for composing reinforcement-schedule DSL programs without writing DSL syntax by hand."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "OperantKit contributors" },
+]
+keywords = [
+  "behavior-analysis",
+  "operant-conditioning",
+  "reinforcement-schedule",
+  "contingency-dsl",
+  "builder-api",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8",
+  "pytest-cov",
+  "hypothesis>=6",
+]
+dev = [
+  "schedule-writer[test]",
+  "mypy>=1.10",
+  "ruff>=0.5",
+]
+
+[project.scripts]
+schedule-writer = "schedule_writer.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/OperantKit"
+Repository = "https://github.com/OperantKit/schedule-writer"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/schedule_writer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+  "--strict-markers",
+  "--strict-config",
+  "-ra",
+]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "unit: pure unit tests with no external dependencies",
+  "integration: tests that exercise cross-module interactions",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["schedule_writer"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+  "\\.\\.\\.",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "RET"]
+
+[tool.ruff.lint.per-file-ignores]
+# The HTML template is a long literal string with embedded markup; line length
+# rules don't help readability there.
+"src/schedule_writer/standalone_html.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
