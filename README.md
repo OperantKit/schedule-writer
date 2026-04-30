@@ -1,5 +1,7 @@
 # schedule-writer
 
+:jp: [日本語版 README](README.ja.md)
+
 Builder API, CLI, and standalone HTML tool for composing reinforcement-schedule
 DSL programs (the surface syntax of `contingency-dsl`) without writing DSL text by
 hand.
@@ -22,6 +24,12 @@ than memorising the grammar.
   HTML file (no CDN, no external scripts) with vanilla-JS dropdowns and inputs
   that compute DSL strings client-side. Useful for distributing the tool to
   users who do not have a Python environment.
+- **`schedule_writer.block_editor_html`** — Generates a visual block-based
+  drag-and-drop editor as a single self-contained HTML file. A palette
+  of atomic-schedule, combinator, and annotation blocks is dragged onto a
+  canvas; compound blocks expose nested slots that themselves accept dropped
+  blocks. The resulting DSL string is compiled live from the block tree.
+  Targets practitioners who are not engineers.
 
 ## Install (development)
 
@@ -56,20 +64,28 @@ schedule-writer build conc "VI 30s" "VI 60s"
 schedule-writer interactive
 ```
 
-### Standalone HTML
+### Standalone HTML (form-based)
 
 ```bash
 schedule-writer html --output schedule-writer.html
 # Open schedule-writer.html in any browser; works offline.
 ```
 
+### Block editor HTML (visual block-based, drag-and-drop)
+
+```bash
+schedule-writer blocks --output schedule-writer-blocks.html
+# Open in any browser. Drag blocks from the left palette onto the canvas;
+# drop compound blocks into each other to nest. Works offline.
+```
+
 ## Output grammar
 
-The generated strings follow the `contingency-dsl` operant grammar (see
-`apps/core/contingency-dsl/spec/en/operant/grammar.md`). Time-domain schedules
-attach a unit suffix by default (`s`, `ms`, `min`); ratio-domain schedules emit
-plain numbers (`FR 5`, `VR 20`). Compound schedules use the canonical
-combinator names: `Conc`, `Mult`, `Chain`, `Tand`, `Alt`.
+The generated strings follow the `contingency-dsl` operant grammar.
+Time-domain schedules attach a unit suffix by default (`s`, `ms`, `min`);
+ratio-domain schedules emit plain numbers (`FR 5`, `VR 20`). Compound
+schedules use the canonical combinator names: `Conc`, `Mult`, `Chain`,
+`Tand`, `Alt`.
 
 ## Status
 

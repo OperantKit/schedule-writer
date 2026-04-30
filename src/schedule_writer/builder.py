@@ -1,10 +1,9 @@
 """Fluent builder API for composing contingency-dsl schedule strings.
 
 The builder produces text in the surface syntax of the contingency-dsl operant
-grammar (see ``apps/core/contingency-dsl/spec/en/operant/grammar.md``). Each
-method validates parameter ranges and raises :class:`ValueError` with a
-descriptive message on invalid input. The output is plain text; nothing is
-parsed or evaluated by this package.
+grammar. Each method validates parameter ranges and raises :class:`ValueError`
+with a descriptive message on invalid input. The output is plain text; nothing
+is parsed or evaluated by this package.
 
 Examples
 --------
