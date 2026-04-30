@@ -21,6 +21,7 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import cast
 
+from schedule_writer.block_editor_html import generate_block_editor_html
 from schedule_writer.builder import DRO_MODES, TIME_UNITS, ScheduleBuilder
 from schedule_writer.standalone_html import generate_standalone_html
 
@@ -201,6 +202,13 @@ def _cmd_html(ns: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_blocks(ns: argparse.Namespace) -> int:
+    output_path = Path(cast(str, ns.output))
+    generate_block_editor_html(output_path)
+    print(f"wrote block editor HTML to {output_path}")
+    return 0
+
+
 def _cmd_interactive(ns: argparse.Namespace) -> int:
     builder = ScheduleBuilder()
     print("schedule-writer interactive — type 'quit' to exit")
@@ -289,6 +297,23 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output path for the HTML file (default: schedule-writer.html)",
     )
     p_html.set_defaults(func=_cmd_html)
+
+    p_blocks = sub.add_parser(
+        "blocks",
+        help="Generate a self-contained drag-and-drop block editor HTML page.",
+        description=(
+            "Generate a visual block-based editor as a single self-contained "
+            "HTML file. Practitioners can drag blocks from a palette to compose "
+            "nested schedules like Chain(FR 5, VI 30s) without writing grammar."
+        ),
+    )
+    p_blocks.add_argument(
+        "--output",
+        "-o",
+        default="schedule-writer-blocks.html",
+        help="Output path for the HTML file (default: schedule-writer-blocks.html)",
+    )
+    p_blocks.set_defaults(func=_cmd_blocks)
 
     return parser
 

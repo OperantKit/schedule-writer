@@ -154,6 +154,19 @@ def test_html_subcommand_writes_file(tmp_path: Path) -> None:
     assert str(output) in out
 
 
+def test_blocks_subcommand_writes_file(tmp_path: Path) -> None:
+    output = tmp_path / "out" / "blocks.html"
+    rc, out, _err = _run(["blocks", "--output", str(output)])
+    assert rc == 0
+    assert output.exists()
+    text = output.read_text(encoding="utf-8")
+    assert "<!DOCTYPE html>" in text
+    assert "block editor" in text.lower()
+    assert 'id="palette"' in text
+    assert 'id="viewport"' in text
+    assert str(output) in out
+
+
 # ---------------------------------------------------------------------------
 # `interactive` subcommand (stdin-driven)
 # ---------------------------------------------------------------------------
