@@ -40,3 +40,13 @@ coverage.xml
 
 # Project-local PLAN drafts
 PLAN.md
+.venv-fresh/
+
+# Generated standalone HTML artifacts (output of `schedule-writer html` / `blocks`)
+/schedule-writer.html
+/schedule-writer-blocks.html
+/blocks.html
+
+# uv is prohibited by the upstream monorepo rules; defensively gitignore the
+# lockfile so an accidental `uv` invocation does not leak into a commit.
+uv.lock
