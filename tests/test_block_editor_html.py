@@ -320,6 +320,28 @@ def test_comment_block_type(tmp_path: Path) -> None:
     assert "// not part of DSL" in text or "comment') return null" in text
 
 
+def test_canvas_drop_accepts_note(tmp_path: Path) -> None:
+    """Regression: the canvas-level drop handler must accept the Note (comment)
+    payload as well as schedule payloads. Without this, the Note chip is silently
+    discarded on drop because isSchedulePayload only returns true for
+    atomic/compound/simple — Note carries cat='comment'."""
+    out = tmp_path / "blocks.html"
+    generate_block_editor_html(out)
+    text = out.read_text(encoding="utf-8")
+    # A predicate broader than isSchedulePayload must exist and include 'comment'.
+    assert "isCanvasNodePayload" in text
+    assert "cat === 'comment'" in text
+    # The viewport (vp) drop handler must use the broader predicate.
+    canvas_drop_idx = text.find("// Palette drop onto canvas")
+    assert canvas_drop_idx != -1, "canvas drop handler comment marker missing"
+    snippet = text[canvas_drop_idx : canvas_drop_idx + 1000]
+    assert "vp.addEventListener('drop'" in snippet
+    assert "isCanvasNodePayload" in snippet, (
+        "canvas drop handler still uses the schedule-only predicate; "
+        "Note drops will be filtered out"
+    )
+
+
 def test_phase_color_and_link_badge(tmp_path: Path) -> None:
     out = tmp_path / "blocks.html"
     generate_block_editor_html(out)

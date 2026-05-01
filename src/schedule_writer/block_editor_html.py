@@ -1145,7 +1145,7 @@ function initViewport() {
   });
   vp.addEventListener('drop', (e) => {
     const { cat, kind } = decodePayload(e.dataTransfer.getData('text/plain'));
-    if (!isSchedulePayload(cat)) return;  // annotations: not here
+    if (!isCanvasNodePayload(cat)) return;  // annotations attach to blocks, not the canvas
     e.preventDefault();
     const w = clientToWorld(e.clientX, e.clientY);
     const node = makeSchedule(kind);
@@ -1199,6 +1199,10 @@ function decodePayload(raw) {
 }
 function isSchedulePayload(cat) {
   return cat === 'atomic' || cat === 'compound' || cat === 'simple';
+}
+function isCanvasNodePayload(cat) {
+  // Canvas root accepts schedules and free-floating sticky notes.
+  return isSchedulePayload(cat) || cat === 'comment';
 }
 
 function attachScheduleDropTarget(elt, onSchedule) {
