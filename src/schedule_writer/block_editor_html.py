@@ -144,15 +144,22 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
     border-radius: 6px 0 0 6px;
     pointer-events: none;
   }
-  .block.comment { background: #fff8c4; border-color: #ddc56a; }
+  .block.comment {
+    background: #fff8c4;
+    border-color: #ddc56a;
+    display: flex;
+    flex-direction: column;
+  }
+  .phase.sized-h .block.comment { height: 100%; }
   .block.comment textarea {
     width: 100%;
     min-height: 4rem;
+    flex: 1;
     border: none;
     background: transparent;
     font: inherit;
     font-size: 0.85rem;
-    resize: vertical;
+    resize: none;
     padding: 0.15rem 0;
     box-sizing: border-box;
   }
@@ -1245,14 +1252,21 @@ function attachAnnotationDropTarget(elt, node) {
 
 const PHASE_MIN_W = 180;
 const PHASE_MAX_W = 900;
+const PHASE_MIN_H = 80;
+const PHASE_MAX_H = 800;
 
-function attachPhaseResize(handle, wrap, node) {
+function attachPhaseResize(handle, wrap, node, axes) {
+  // axes: 'x' = width only (default, edge handle / non-comment corner)
+  //       'xy' = both axes (sticky-note style, comment corner)
+  axes = axes || 'x';
   handle.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
     e.stopPropagation();
     e.preventDefault();
-    const startW = node.w || wrap.getBoundingClientRect().width / view.scale;
-    const start = { cx: e.clientX, w0: startW };
+    const rect = wrap.getBoundingClientRect();
+    const startW = node.w || rect.width / view.scale;
+    const startH = node.h || rect.height / view.scale;
+    const start = { cx: e.clientX, cy: e.clientY, w0: startW, h0: startH };
     handle.classList.add('active');
     const onMove = (ev) => {
       let w = start.w0 + (ev.clientX - start.cx) / view.scale;
@@ -1260,6 +1274,13 @@ function attachPhaseResize(handle, wrap, node) {
       node.w = w;
       wrap.classList.add('sized');
       wrap.style.width = w + 'px';
+      if (axes === 'xy') {
+        let h = start.h0 + (ev.clientY - start.cy) / view.scale;
+        h = Math.max(PHASE_MIN_H, Math.min(PHASE_MAX_H, h));
+        node.h = h;
+        wrap.classList.add('sized-h');
+        wrap.style.height = h + 'px';
+      }
     };
     const onUp = () => {
       window.removeEventListener('mousemove', onMove);
@@ -1270,12 +1291,17 @@ function attachPhaseResize(handle, wrap, node) {
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
   });
-  // Double-click to reset to content-fit width.
+  // Double-click to reset to content-fit size.
   handle.addEventListener('dblclick', (e) => {
     e.stopPropagation();
     delete node.w;
     wrap.classList.remove('sized');
     wrap.style.width = '';
+    if (axes === 'xy') {
+      delete node.h;
+      wrap.classList.remove('sized-h');
+      wrap.style.height = '';
+    }
     dirty();
   });
 }
@@ -2081,6 +2107,10 @@ function render() {
       phase.classList.add('sized');
       phase.style.width = node.w + 'px';
     }
+    if (typeof node.h === 'number') {
+      phase.classList.add('sized-h');
+      phase.style.height = node.h + 'px';
+    }
     if (selection.has(node.id)) phase.classList.add('selected');
     const color = phaseColor(node);
     if (color) {
@@ -2103,12 +2133,16 @@ function render() {
         }
       });
     }
+    const cornerAxes = node.category === 'comment' ? 'xy' : 'x';
+    const cornerTitle = cornerAxes === 'xy'
+      ? 'Drag to resize · double-click to reset'
+      : 'Drag to resize width · double-click to reset';
     const edgeHandle = el('div', { class: 'resize-handle', title: 'Drag to resize width · double-click to reset' });
-    const cornerHandle = el('div', { class: 'resize-handle-br', title: 'Drag to resize width · double-click to reset' });
+    const cornerHandle = el('div', { class: 'resize-handle-br', title: cornerTitle });
     phase.appendChild(edgeHandle);
     phase.appendChild(cornerHandle);
-    attachPhaseResize(edgeHandle, phase, node);
-    attachPhaseResize(cornerHandle, phase, node);
+    attachPhaseResize(edgeHandle, phase, node, 'x');
+    attachPhaseResize(cornerHandle, phase, node, cornerAxes);
     attachPhaseMove(phase, node);
     attachPhaseSelect(phase, node);
     world.appendChild(phase);

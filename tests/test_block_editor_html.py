@@ -320,6 +320,29 @@ def test_comment_block_type(tmp_path: Path) -> None:
     assert "// not part of DSL" in text or "comment') return null" in text
 
 
+def test_note_phase_resizes_both_axes(tmp_path: Path) -> None:
+    """Note (comment) phases must support diagonal resize via the corner handle:
+    width and height both. Other phase types stay width-only because their height
+    is content-determined."""
+    out = tmp_path / "blocks.html"
+    generate_block_editor_html(out)
+    text = out.read_text(encoding="utf-8")
+    # Two-axis bounds defined.
+    assert "PHASE_MIN_H" in text
+    assert "PHASE_MAX_H" in text
+    # Resize helper is parameterised by axis.
+    assert "function attachPhaseResize(handle, wrap, node, axes)" in text
+    assert "axes === 'xy'" in text
+    # Comment phases get the 'xy' axis on the corner handle, others stay 'x'.
+    assert "node.category === 'comment' ? 'xy' : 'x'" in text
+    # node.h is rendered onto the phase when set.
+    assert "phase.style.height = node.h + 'px'" in text
+    # Textarea no longer carries its own resize handle (phase corner owns it).
+    assert "resize: none" in text
+    # And the comment block becomes a flex column so the textarea fills the box.
+    assert "phase.sized-h .block.comment" in text
+
+
 def test_canvas_drop_accepts_note(tmp_path: Path) -> None:
     """Regression: the canvas-level drop handler must accept the Note (comment)
     payload as well as schedule payloads. Without this, the Note chip is silently
