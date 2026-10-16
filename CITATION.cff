@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: "schedule-writer"
+authors:
+  - name: "OperantKit contributors"
+repository-code: "https://github.com/OperantKit/schedule-writer"
+license: MIT
+abstract: "Builder API and CLI for composing reinforcement-schedule DSL programs without writing DSL syntax by hand."
