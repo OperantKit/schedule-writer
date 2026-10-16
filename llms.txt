@@ -1,0 +1,36 @@
+# schedule-writer
+
+> Builder API, CLI, and offline HTML editors that compose contingency-dsl reinforcement-schedule strings (FR, VR, RR, FI, VI, RI, FT, VT, RT, CRF, EXT, DRO, DRL, DRH and Conc / Mult / Chain / Tand / Alt) without writing DSL syntax by hand.
+
+schedule-writer is part of OperantKit, a set of Python/Rust packages for designing and running operant and respondent conditioning experiments (reinforcement schedules, session recording, analysis). Use it to generate schedule expressions from code or forms: every builder method's output is tested against the contingency-dsl-py parser, and parameters are checked before a string is produced.
+
+## Install
+
+```bash
+pip install git+https://github.com/OperantKit/schedule-writer
+```
+
+## Minimal example
+
+```python
+from schedule_writer.builder import ScheduleBuilder
+
+b = ScheduleBuilder()
+print(b.concurrent(b.vi(30), b.vi(60)))  # Conc(VI 30s, VI 60s)
+print(b.chained(b.fr(5), b.fi(30)))      # Chain(FR 5, FI 30s)
+```
+
+CLI: `schedule-writer build conc "VI 30s" "VI 60s"`. Offline editors: `schedule-writer html --output form.html`, `schedule-writer blocks --output blocks.html`.
+
+## Docs
+
+- [README](https://github.com/OperantKit/schedule-writer/blob/main/README.md): components, 30-second example, why not to write DSL strings by hand, output grammar
+- [AGENTS.md](https://github.com/OperantKit/schedule-writer/blob/main/AGENTS.md): when to use this package and what not to do
+
+## Related packages
+
+- [contingency-dsl](https://github.com/OperantKit/contingency-dsl): the schedule language specification
+- [contingency-dsl-py](https://github.com/OperantKit/contingency-dsl-py): parser that validates the generated strings (`pip install contingency-dsl-py`)
+- [contingency-py](https://github.com/OperantKit/contingency-py): runs the parsed schedule (`pip install contingency-py`)
+- [schedule-visualizer](https://github.com/OperantKit/schedule-visualizer): dry-run timeline of a schedule string
+- [contingency-dsl2procedure](https://github.com/OperantKit/contingency-dsl2procedure): turns the schedule into Method-section text

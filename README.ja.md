@@ -37,6 +37,39 @@ mise exec -- python -m venv .venv
 .venv/bin/python -m pip install -e ".[dev]"
 ```
 
+## 30 秒で動く例
+
+```bash
+pip install git+https://github.com/OperantKit/schedule-writer
+pip install contingency-dsl-py   # 下のように出力を検査するときだけ必要
+```
+
+DSL の構文を書かずにスケジュールを組み立て、パーサが受理することを確かめる:
+
+```python
+from schedule_writer.builder import ScheduleBuilder
+from contingency_dsl import parse
+
+b = ScheduleBuilder()
+source = b.concurrent(b.vi(30), b.vi(60))
+print(source)  # Conc(VI 30s, VI 60s)
+print(type(parse(source)).__name__)  # Program — 正しい contingency-dsl の文字列
+
+try:
+    b.rr(5)  # 確率比率 (RR) は回数でなく確率を取る
+except ValueError as error:
+    print(error)  # RR requires a probability in (0, 1], got 5
+```
+
+この文字列は [contingency-py](https://github.com/OperantKit/contingency-py)（`from_dsl(parse(source))`）に渡せばスケジュールとして動き、[operantkit-cli](https://github.com/OperantKit/operantkit-cli)（`operant run --schedule "Conc(VI 30s, VI 60s)"`）にも渡せる。
+
+## DSL の文字列を手で書かない理由
+
+- **どのビルダメソッドも構文解析できる DSL を出す.** 14 の単一スケジュール（CRF・EXT・FR・VR・RR・FI・VI・RI・FT・VT・RT・DRO・DRL・DRH）と 5 つの結合子（`Conc`・`Mult`・`Chain`・`Tand`・`Alt`）の出力を、`tests/test_builder_parses.py` で contingency-dsl-py に通して確かめている。
+- **文字列を作る前にパラメータを検査する.** 例えば `rr` は (0, 1] の確率を要し、注釈は `@` で始まらなければならない。
+- **単位と綴りが文法どおり.** 時間に基づくスケジュールには単位（`s`・`ms`・`min`）が付き、結合子は正規の名前を使う。
+- **利用者に Python は要らない.** `schedule-writer html` と `schedule-writer blocks` は、同じ文字列をブラウザ内で組み立てる 1 ファイルのオフライン HTML（フォーム版とドラッグ＆ドロップのブロックエディタ）を書き出す。
+
 ## 使用方法
 
 ### ビルダ API
@@ -49,8 +82,8 @@ b.fr(5)                       # "FR 5"
 b.vi(30)                      # "VI 30s"
 b.concurrent(b.vi(30), b.vi(60))   # "Conc(VI 30s, VI 60s)"
 b.chained(b.fr(5), b.fi(30))       # "Chain(FR 5, FI 30s)"
-b.with_annotation(b.fr(5), "@reinforcer(food)")
-#   "FR 5 @reinforcer(food)"
+b.with_annotation(b.fr(5), '@reinforcer("food")')
+#   'FR 5 @reinforcer("food")'
 ```
 
 ### CLI
