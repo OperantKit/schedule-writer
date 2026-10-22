@@ -218,29 +218,29 @@ class TestCompounds:
 class TestAnnotations:
     def test_single_annotation(self, b: ScheduleBuilder) -> None:
         assert (
-            b.with_annotation(b.fr(5), "@reinforcer(food)")
-            == "FR 5 @reinforcer(food)"
+            b.with_annotation(b.fr(5), '@reinforcer("food")')
+            == 'FR 5 @reinforcer("food")'
         )
 
     def test_multiple_annotations(self, b: ScheduleBuilder) -> None:
         assert (
-            b.with_annotation(b.vi(30), "@reinforcer(food)", "@operandum(lever-left)")
-            == "VI 30s @reinforcer(food) @operandum(lever-left)"
+            b.with_annotation(b.vi(30), '@reinforcer("food")', '@operandum("lever-left")')
+            == 'VI 30s @reinforcer("food") @operandum("lever-left")'
         )
 
     def test_annotation_strips_surrounding_whitespace(self, b: ScheduleBuilder) -> None:
         assert (
-            b.with_annotation("  FR 5  ", "  @reinforcer(food)  ")
-            == "FR 5 @reinforcer(food)"
+            b.with_annotation("  FR 5  ", '  @reinforcer("food")  ')
+            == 'FR 5 @reinforcer("food")'
         )
 
     def test_annotation_requires_at_sign(self, b: ScheduleBuilder) -> None:
         with pytest.raises(ValueError, match="must start with '@'"):
-            b.with_annotation(b.fr(5), "reinforcer(food)")
+            b.with_annotation(b.fr(5), 'reinforcer("food")')
 
     def test_annotation_requires_nonempty_schedule(self, b: ScheduleBuilder) -> None:
         with pytest.raises(ValueError, match="non-empty"):
-            b.with_annotation("", "@reinforcer(food)")
+            b.with_annotation("", '@reinforcer("food")')
 
     def test_annotation_requires_at_least_one(self, b: ScheduleBuilder) -> None:
         with pytest.raises(ValueError, match="at least one"):

@@ -14,8 +14,8 @@ Examples
 'VI 30s'
 >>> b.concurrent(b.vi(30), b.vi(60))
 'Conc(VI 30s, VI 60s)'
->>> b.with_annotation(b.fr(5), '@reinforcer(food)')
-'FR 5 @reinforcer(food)'
+>>> b.with_annotation(b.fr(5), '@reinforcer("food")')
+'FR 5 @reinforcer("food")'
 """
 
 from __future__ import annotations
@@ -237,7 +237,7 @@ class ScheduleBuilder:
     def with_annotation(self, schedule: str, *annotations: str) -> str:
         """Append one or more annotation tokens to a schedule string.
 
-        Each annotation must start with ``@`` (e.g. ``@reinforcer(food)``).
+        Each annotation must start with ``@`` (e.g. ``@reinforcer("food")``).
         Whitespace between the schedule and annotations is normalised to a
         single space.
         """

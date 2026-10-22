@@ -143,14 +143,14 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
 
 <fieldset>
   <legend>Annotation</legend>
-  <div class="hint">Append annotations like <code>@reinforcer(food)</code> to a schedule string.</div>
+  <div class="hint">Append annotations like <code>@reinforcer("food")</code> to a schedule string.</div>
   <div class="row">
     <label for="annTarget">Schedule</label>
     <input id="annTarget" type="text" value="FR 5">
   </div>
   <div class="row">
     <label for="annText">Annotation</label>
-    <input id="annText" type="text" value="@reinforcer(food)">
+    <input id="annText" type="text" value='@reinforcer("food")'>
     <button id="annBuild">Apply</button>
   </div>
   <div class="err" id="annErr"></div>

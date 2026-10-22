@@ -92,14 +92,14 @@ def test_parse_round_trip_compound_with_tags(tmp_path: Path) -> None:
     out = tmp_path / "blocks.html"
     generate_block_editor_html(out)
     probe = """
-    const src = 'Conc(VI 30s, VI 60s) @reinforcer(food) @timeout(5s)';
+    const src = 'Conc(VI 30s, VI 60s) @reinforcer("food") @timeout(5s)';
     const prog = parseProgram(src);
     const lines = prog.nodes.map(compileNode).join('\\n');
     console.log(JSON.stringify({ lines: lines, count: prog.nodes.length }));
     """
     result = json.loads(_run_node(out, probe))
     assert result["count"] == 1
-    assert result["lines"] == "Conc(VI 30s, VI 60s) @reinforcer(food) @timeout(5s)"
+    assert result["lines"] == 'Conc(VI 30s, VI 60s) @reinforcer("food") @timeout(5s)'
 
 
 def test_parse_multiline_phases(tmp_path: Path) -> None:
@@ -108,7 +108,7 @@ def test_parse_multiline_phases(tmp_path: Path) -> None:
     probe = """
     const src = [
       'EXT @phase("A1-baseline")',
-      'FR 5 @reinforcer(food) @operandum(lever) @phase("B1")',
+      'FR 5 @reinforcer("food") @operandum("lever") @phase("B1")',
       'Chain(FR 10, VI 30s) @phase("B2")',
     ].join('\\n');
     const prog = parseProgram(src);
@@ -118,7 +118,7 @@ def test_parse_multiline_phases(tmp_path: Path) -> None:
     result = json.loads(_run_node(out, probe))
     assert result["count"] == 3
     assert 'EXT @phase("A1-baseline")' in result["lines"]
-    assert "FR 5 @reinforcer(food) @operandum(lever)" in result["lines"]
+    assert 'FR 5 @reinforcer("food") @operandum("lever")' in result["lines"]
     assert "Chain(FR 10, VI 30s)" in result["lines"]
 
 
@@ -218,3 +218,35 @@ def test_parse_error_has_line_number(tmp_path: Path) -> None:
     assert "ok" not in result
     assert result["line"] == 2
     assert "line 2" in result["err"]
+
+
+def test_reinforcer_and_operandum_tags_compile_quoted(tmp_path: Path) -> None:
+    """contingency-dsl-py only accepts string arguments: @reinforcer("food")."""
+    from contingency_dsl import parse
+    import contingency_dsl.annotations as annotations
+    from contingency_dsl.extensions import ExtensionRegistry
+
+    out = tmp_path / "blocks.html"
+    generate_block_editor_html(out)
+    probe = """
+    const defaults = ['@reinforcer', '@operandum'].map(k => compileTag(makeTag(k)));
+    const quoted = compileTag(migrateTag('@reinforcer("water")'));
+    const quotedKind = migrateTag('@reinforcer("water")').values.kind;
+    const legacy = compileTag(migrateTag('@operandum(lever-left)'));
+    console.log(JSON.stringify({ defaults, quoted, quotedKind, legacy }));
+    """
+    result = json.loads(_run_node(out, probe))
+    assert result["defaults"] == ['@reinforcer("food")', '@operandum("lever")']
+    assert result["quoted"] == '@reinforcer("water")'
+    assert result["quotedKind"] == "water"
+    assert result["legacy"] == '@operandum("lever-left")'
+
+    registry = ExtensionRegistry.build(
+        *(
+            getattr(annotations, name)()
+            for name in dir(annotations)
+            if name.endswith("Extension") and name[0].isupper()
+        )
+    )
+    for tag in [*result["defaults"], result["quoted"], result["legacy"]]:
+        parse(f"FR 5 {tag}", extensions=registry)
