@@ -26,8 +26,17 @@ To check or run the result, parse it with contingency-dsl-py and compile it with
 
 Use behavior-analytic terms: *reinforcer* (not "reward"), *discriminative stimulus* (not "trigger"), *establishing operation* when discussing motivation, *operandum* for a lever, key, or button.
 
+## Why not write the DSL strings by hand?
+
+(Moved from README.md unchanged.)
+
+- **Every builder method produces parseable DSL.** All 14 atomic schedules (CRF, EXT, FR, VR, RR, FI, VI, RI, FT, VT, RT, DRO, DRL, DRH) and 5 combinators (`Conc`, `Mult`, `Chain`, `Tand`, `Alt`) are checked against contingency-dsl-py in `tests/test_builder_parses.py`.
+- **Parameters are checked before a string is produced.** For example, `rr` requires a probability in (0, 1] and annotations must start with `@`.
+- **Units and spelling follow the grammar.** Time-based schedules get a unit suffix (`s`, `ms`, `min`) and combinators use the canonical names.
+- **No Python needed for end users.** `schedule-writer html` and `schedule-writer blocks` write single offline HTML files (a form and a drag-and-drop block editor) that compose the same strings in the browser.
+
 ## Working on this repository
 
-- Python 3.11+. Create the environment with `python -m venv .venv` and `.venv/bin/python -m pip install -e ".[dev]"`; run `.venv/bin/pytest`.
+- Python 3.11+. Create the environment with `python -m venv .venv`, install contingency-dsl-py from GitHub (`.venv/bin/python -m pip install git+https://github.com/OperantKit/contingency-dsl-py`), then `.venv/bin/python -m pip install -e . pytest pytest-cov hypothesis`; run `.venv/bin/pytest`. The `[dev]` extra does not resolve until contingency-dsl-py is released.
 - `README.md` (English) is canonical; keep `README.ja.md` in sync in the same commit.
 - Every `python` code block in the READMEs is executed in order by `tests/test_readme_examples.py`.

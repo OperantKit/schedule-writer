@@ -2,50 +2,24 @@
 
 :jp: [日本語版 README](README.ja.md)
 
-Builder API, CLI, and standalone HTML tool for composing reinforcement-schedule
-DSL programs (the surface syntax of `contingency-dsl`) without writing DSL text by
-hand.
+schedule-writer builds reinforcement-schedule expressions such as `Conc(VI 30s, VI 60s)` from Python calls, a command line, or a page in the browser, so you do not have to remember the exact notation. It is for researchers, students, and people who set up experiments. Within [OperantKit](https://github.com/OperantKit), it writes the input that [contingency-dsl](https://github.com/OperantKit/contingency-dsl) defines and that [contingency-py](https://github.com/OperantKit/contingency-py) runs.
 
-The intended audience is practitioners and researchers who want to assemble
-schedules like `Conc(VI 30s, VI 60s)` from dropdowns and parameter inputs rather
-than memorising the grammar.
+- **No grammar to memorize.** Pick a schedule and its value; you get the expression.
+- **Impossible values are rejected.** `RR 5` (a random-ratio schedule takes a probability) is refused before any text is produced.
+- **Works without Python.** Two offline HTML pages, a form and a drag-and-drop block editor, are also published at <https://operantkit.github.io/schedule-writer/>.
 
-## Components
+## Installation
 
-- **`schedule_writer.builder`** — Pure-Python fluent API. Functions return DSL
-  strings; nothing is parsed, evaluated, or executed. Consumers can pipe the
-  output to `contingency-dsl-py` for validation if desired.
-- **`schedule_writer.cli`** — Command-line entry point with two subcommands:
-  - `schedule-writer build <schedule> <args...>` — single-shot construction
-    (e.g. `schedule-writer build fr 5` prints `FR 5`).
-  - `schedule-writer interactive` — guided REPL that prompts for the schedule
-    family and parameters, then prints the resulting DSL string.
-- **`schedule_writer.standalone_html`** — Generates a single self-contained
-  HTML file (no CDN, no external scripts) with vanilla-JS dropdowns and inputs
-  that compute DSL strings client-side. Useful for distributing the tool to
-  users who do not have a Python environment.
-- **`schedule_writer.block_editor_html`** — Generates a visual block-based
-  drag-and-drop editor as a single self-contained HTML file. A palette
-  of atomic-schedule, combinator, and annotation blocks is dragged onto a
-  canvas; compound blocks expose nested slots that themselves accept dropped
-  blocks. The resulting DSL string is compiled live from the block tree.
-  Targets practitioners who are not engineers.
-
-## Install (development)
-
-```bash
-mise exec -- python -m venv .venv
-.venv/bin/python -m pip install -e ".[dev]"
-```
-
-## 30-second example
+Python 3.11 or newer. schedule-writer is not on PyPI yet; install it from GitHub. It has no dependencies.
 
 ```bash
 pip install git+https://github.com/OperantKit/schedule-writer
-pip install contingency-dsl-py   # only needed to check the output, as below
+pip install git+https://github.com/OperantKit/contingency-dsl-py   # optional: to check the output, as below
 ```
 
-Build a schedule without writing DSL syntax, and confirm that the parser accepts it:
+## Example
+
+Build a concurrent schedule, confirm that the contingency-dsl parser accepts it, and see a parameter error:
 
 ```python
 from schedule_writer.builder import ScheduleBuilder
@@ -53,75 +27,52 @@ from contingency_dsl import parse
 
 b = ScheduleBuilder()
 source = b.concurrent(b.vi(30), b.vi(60))
-print(source)  # Conc(VI 30s, VI 60s)
-print(type(parse(source)).__name__)  # Program — the string is valid contingency-dsl
+print(source)                        # Conc(VI 30s, VI 60s)
+print(type(parse(source)).__name__)  # Program
+
+print(b.chained(b.fr(5), b.fi(30)))  # Chain(FR 5, FI 30s)
 
 try:
-    b.rr(5)  # a random-ratio schedule takes a probability, not a count
+    b.rr(5)
 except ValueError as error:
-    print(error)  # RR requires a probability in (0, 1], got 5
+    print(error)                     # RR requires a probability in (0, 1], got 5
 ```
 
-The string can be passed to [contingency-py](https://github.com/OperantKit/contingency-py) (`from_dsl(parse(source))`) to run the schedule, or to [operantkit-cli](https://github.com/OperantKit/operantkit-cli) (`operant run --schedule "Conc(VI 30s, VI 60s)"`).
+The string can then be run with contingency-py (`from_dsl(parse(source))`) or with [operantkit-cli](https://github.com/OperantKit/operantkit-cli) (`operant run --schedule "Conc(VI 30s, VI 60s)"`).
 
-## Why not write the DSL strings by hand?
+## What is included
 
-- **Every builder method produces parseable DSL.** All 14 atomic schedules (CRF, EXT, FR, VR, RR, FI, VI, RI, FT, VT, RT, DRO, DRL, DRH) and 5 combinators (`Conc`, `Mult`, `Chain`, `Tand`, `Alt`) are checked against contingency-dsl-py in `tests/test_builder_parses.py`.
-- **Parameters are checked before a string is produced.** For example, `rr` requires a probability in (0, 1] and annotations must start with `@`.
-- **Units and spelling follow the grammar.** Time-based schedules get a unit suffix (`s`, `ms`, `min`) and combinators use the canonical names.
-- **No Python needed for end users.** `schedule-writer html` and `schedule-writer blocks` write single offline HTML files (a form and a drag-and-drop block editor) that compose the same strings in the browser.
+| Part | What it does |
+|---|---|
+| `ScheduleBuilder` (Python) | One method per schedule: 14 simple schedules (`crf`, `ext`, `fr`, `vr`, `rr`, `fi`, `vi`, `ri`, `ft`, `vt`, `rt`, `dro`, `drl`, `drh`) and 5 ways of combining them (`concurrent` → `Conc`, `multiple` → `Mult`, `chained` → `Chain`, `tandem` → `Tand`, `alternative` → `Alt`). `with_annotation` appends annotations such as `@reinforcer("food")`. |
+| `schedule-writer build` | Prints one expression: `schedule-writer build fr 5` → `FR 5`, `schedule-writer build conc "VI 30s" "VI 60s"` → `Conc(VI 30s, VI 60s)`. |
+| `schedule-writer interactive` | A prompt where you type `vi 30`, `conc "VI 30s" "VI 60s"`, and so on, one per line. |
+| `schedule-writer html -o form.html` | Writes a single offline HTML form. |
+| `schedule-writer blocks -o blocks.html` | Writes a single offline drag-and-drop block editor: drop schedules into combinator blocks to nest them. |
 
-## Usage
+Time-based schedules get a unit suffix (`s` by default, also `ms` and `min`, e.g. `schedule-writer build fi 2 min`); ratio schedules are plain numbers (`FR 5`, `VR 20`). The output of every builder method is parsed by contingency-dsl-py in the test suite.
 
-### Builder API
+## Limitations
 
-```python
-from schedule_writer.builder import ScheduleBuilder
+- The builder checks parameters but does not parse its own output. Parse the final string with contingency-dsl-py, especially after joining builder output with text you wrote yourself.
+- Only the schedules listed above are covered. Progressive-ratio schedules, changeover delays (`COD`), limited holds, and multi-phase designs have to be written in contingency-dsl directly.
+- Annotations are passed through as written. `parse()` without an extension registry rejects them; their arguments must be quoted strings or numbers (`@reinforcer("food")`).
 
-b = ScheduleBuilder()
-b.fr(5)                       # "FR 5"
-b.vi(30)                      # "VI 30s"
-b.concurrent(b.vi(30), b.vi(60))   # "Conc(VI 30s, VI 60s)"
-b.chained(b.fr(5), b.fi(30))       # "Chain(FR 5, FI 30s)"
-b.with_annotation(b.fr(5), '@reinforcer("food")')
-#   'FR 5 @reinforcer("food")'
-```
+## For AI coding agents
 
-### CLI
+Guidance for AI coding agents is in [AGENTS.md](AGENTS.md).
+
+## Development
 
 ```bash
-schedule-writer --help
-schedule-writer build fr 5
-schedule-writer build vi 30
-schedule-writer build conc "VI 30s" "VI 60s"
-schedule-writer interactive
+python -m venv .venv
+.venv/bin/python -m pip install git+https://github.com/OperantKit/contingency-dsl-py
+.venv/bin/python -m pip install -e . pytest pytest-cov hypothesis
+.venv/bin/pytest
 ```
 
-### Standalone HTML (form-based)
+The `[test]` and `[dev]` extras ask for a released contingency-dsl-py that is not on PyPI yet, so install the test tools by name as above. Every `python` block in both READMEs is run by `tests/test_readme_examples.py`.
 
-```bash
-schedule-writer html --output schedule-writer.html
-# Open schedule-writer.html in any browser; works offline.
-```
+## License
 
-### Block editor HTML (visual block-based, drag-and-drop)
-
-```bash
-schedule-writer blocks --output schedule-writer-blocks.html
-# Open in any browser. Drag blocks from the left palette onto the canvas;
-# drop compound blocks into each other to nest. Works offline.
-```
-
-## Output grammar
-
-The generated strings follow the `contingency-dsl` operant grammar.
-Time-domain schedules attach a unit suffix by default (`s`, `ms`, `min`);
-ratio-domain schedules emit plain numbers (`FR 5`, `VR 20`). Compound
-schedules use the canonical combinator names: `Conc`, `Mult`, `Chain`,
-`Tand`, `Alt`.
-
-## Status
-
-Alpha. The builder API mirrors the surface syntax of the DSL but does not
-itself parse or validate the result against the formal grammar; consumers
-should treat the output as input text to a downstream parser.
+MIT. See [LICENSE](LICENSE).

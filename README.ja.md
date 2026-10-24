@@ -2,49 +2,24 @@
 
 :gb: [English README](README.md)
 
-強化スケジュール DSL プログラム（`contingency-dsl` の表層構文）を手書き
-することなく組み立てるためのビルダ API、CLI、スタンドアロン HTML ツール。
+schedule-writer は、`Conc(VI 30s, VI 60s)` のような強化スケジュールの式を、Python の呼び出し・コマンドライン・ブラウザのページから組み立てる道具です。正確な書き方を覚えていなくても式が作れます。研究者・学生・実験を組む人に向けたものです。[OperantKit](https://github.com/OperantKit) の中では、[contingency-dsl](https://github.com/OperantKit/contingency-dsl) が定め [contingency-py](https://github.com/OperantKit/contingency-py) が実行する入力を書く役目を持ちます。
 
-想定読者は、文法を暗記せずドロップダウンとパラメータ入力から
-`Conc(VI 30s, VI 60s)` のようなスケジュールを組み立てたい実務家と研究者。
+- **文法を覚えなくてよい。** スケジュールと値を選べば式ができます。
+- **あり得ない値ははじかれる。** `RR 5`（確率比率スケジュールは回数でなく確率を取る）は、文字列を作る前に拒否されます。
+- **Python が無くても使える。** フォームとドラッグ＆ドロップのブロックエディタという 2 つのオフライン HTML ページがあり、<https://operantkit.github.io/schedule-writer/> でも公開しています。
 
-## コンポーネント
+## インストール
 
-- **`schedule_writer.builder`** — 純 Python の流暢な API。関数は DSL
-  文字列を返す; パース・評価・実行は一切行わない。希望があれば
-  コンシューマは出力を `contingency-dsl-py` にパイプして検証できる。
-- **`schedule_writer.cli`** — 2 つのサブコマンドを持つコマンドライン・
-  エントリポイント:
-  - `schedule-writer build <schedule> <args...>` — 単発構築
-    （例: `schedule-writer build fr 5` は `FR 5` を出力）。
-  - `schedule-writer interactive` — スケジュール・ファミリとパラメータ
-    をプロンプトで聞き、結果の DSL 文字列を出力するガイド付き REPL。
-- **`schedule_writer.standalone_html`** — CDN 無し、外部スクリプト無しの
-  自己完結型 HTML ファイルを生成する。バニラ JS のドロップダウンと
-  入力でクライアントサイドで DSL 文字列を計算する。Python 環境を持た
-  ないユーザへのツール配布に有用。
-- **`schedule_writer.block_editor_html`** — ビジュアルブロック型のドラッグ＆ドロップ
-  エディタを単一の自己完結型 HTML として生成する。左のパレット
-  から原子スケジュール・コンビネータ・アノテーションのブロックを
-  キャンバスへドラッグし、複合ブロックのスロットに別のブロックを入れ子に
-  ドロップできる。DSL 文字列はブロック木からライブでコンパイルされる。
-  エンジニアではない実務家を対象とする。
-
-## インストール（開発）
-
-```bash
-mise exec -- python -m venv .venv
-.venv/bin/python -m pip install -e ".[dev]"
-```
-
-## 30 秒で動く例
+Python 3.11 以上。schedule-writer はまだ PyPI に公開されていないので、GitHub から入れます。依存するパッケージはありません。
 
 ```bash
 pip install git+https://github.com/OperantKit/schedule-writer
-pip install contingency-dsl-py   # 下のように出力を検査するときだけ必要
+pip install git+https://github.com/OperantKit/contingency-dsl-py   # 任意: 下の例のように出力を確かめるとき
 ```
 
-DSL の構文を書かずにスケジュールを組み立て、パーサが受理することを確かめる:
+## 例
+
+並立スケジュールを組み立て、contingency-dsl のパーサが受理することを確かめ、値の誤りがどう報告されるかを見ます。
 
 ```python
 from schedule_writer.builder import ScheduleBuilder
@@ -52,75 +27,52 @@ from contingency_dsl import parse
 
 b = ScheduleBuilder()
 source = b.concurrent(b.vi(30), b.vi(60))
-print(source)  # Conc(VI 30s, VI 60s)
-print(type(parse(source)).__name__)  # Program — 正しい contingency-dsl の文字列
+print(source)                        # Conc(VI 30s, VI 60s)
+print(type(parse(source)).__name__)  # Program
+
+print(b.chained(b.fr(5), b.fi(30)))  # Chain(FR 5, FI 30s)
 
 try:
-    b.rr(5)  # 確率比率 (RR) は回数でなく確率を取る
+    b.rr(5)
 except ValueError as error:
-    print(error)  # RR requires a probability in (0, 1], got 5
+    print(error)                     # RR requires a probability in (0, 1], got 5
 ```
 
-この文字列は [contingency-py](https://github.com/OperantKit/contingency-py)（`from_dsl(parse(source))`）に渡せばスケジュールとして動き、[operantkit-cli](https://github.com/OperantKit/operantkit-cli)（`operant run --schedule "Conc(VI 30s, VI 60s)"`）にも渡せる。
+できた文字列は contingency-py（`from_dsl(parse(source))`）や [operantkit-cli](https://github.com/OperantKit/operantkit-cli)（`operant run --schedule "Conc(VI 30s, VI 60s)"`）でそのまま実行できます。
 
-## DSL の文字列を手で書かない理由
+## 何が入っているか
 
-- **どのビルダメソッドも構文解析できる DSL を出す.** 14 の単一スケジュール（CRF・EXT・FR・VR・RR・FI・VI・RI・FT・VT・RT・DRO・DRL・DRH）と 5 つの結合子（`Conc`・`Mult`・`Chain`・`Tand`・`Alt`）の出力を、`tests/test_builder_parses.py` で contingency-dsl-py に通して確かめている。
-- **文字列を作る前にパラメータを検査する.** 例えば `rr` は (0, 1] の確率を要し、注釈は `@` で始まらなければならない。
-- **単位と綴りが文法どおり.** 時間に基づくスケジュールには単位（`s`・`ms`・`min`）が付き、結合子は正規の名前を使う。
-- **利用者に Python は要らない.** `schedule-writer html` と `schedule-writer blocks` は、同じ文字列をブラウザ内で組み立てる 1 ファイルのオフライン HTML（フォーム版とドラッグ＆ドロップのブロックエディタ）を書き出す。
+| 部品 | すること |
+|---|---|
+| `ScheduleBuilder`（Python） | スケジュールごとに 1 つのメソッド。単一のスケジュール 14 種（`crf`、`ext`、`fr`、`vr`、`rr`、`fi`、`vi`、`ri`、`ft`、`vt`、`rt`、`dro`、`drl`、`drh`）と、組み合わせ方 5 種（`concurrent` → `Conc`、`multiple` → `Mult`、`chained` → `Chain`、`tandem` → `Tand`、`alternative` → `Alt`）。`with_annotation` は `@reinforcer("food")` のような注釈を後ろに付けます。 |
+| `schedule-writer build` | 式を 1 つ出力します。`schedule-writer build fr 5` → `FR 5`、`schedule-writer build conc "VI 30s" "VI 60s"` → `Conc(VI 30s, VI 60s)`。 |
+| `schedule-writer interactive` | `vi 30` や `conc "VI 30s" "VI 60s"` などを 1 行ずつ打ち込む対話式の入力です。 |
+| `schedule-writer html -o form.html` | オフラインで動く HTML のフォームを 1 ファイルで書き出します。 |
+| `schedule-writer blocks -o blocks.html` | オフラインで動くドラッグ＆ドロップのブロックエディタを 1 ファイルで書き出します。スケジュールを組み合わせのブロックの中に落とすと入れ子になります。 |
 
-## 使用方法
+時間に基づくスケジュールには単位が付きます（既定は `s`。`ms` と `min` も使えます。例: `schedule-writer build fi 2 min`）。比率スケジュールは数だけです（`FR 5`、`VR 20`）。どのメソッドの出力も、テストの中で contingency-dsl-py にパースさせています。
 
-### ビルダ API
+## 制限
 
-```python
-from schedule_writer.builder import ScheduleBuilder
+- ビルダは値を検査しますが、自分の出力をパースはしません。最後にできた文字列は contingency-dsl-py でパースしてください。とくにビルダの出力に自分で書いた文字列をつなげたときは必ずです。
+- 扱えるのは上に挙げたスケジュールだけです。累進比率スケジュール、切替遅延（COD）、制限時間（limited hold）、複数の段階からなる実験計画は contingency-dsl で直接書いてください。
+- 注釈は書いたまま付け足すだけです。拡張の登録なしの `parse()` は注釈を受け付けません。注釈の引数は引用符で囲んだ文字列か数にします（`@reinforcer("food")`）。
 
-b = ScheduleBuilder()
-b.fr(5)                       # "FR 5"
-b.vi(30)                      # "VI 30s"
-b.concurrent(b.vi(30), b.vi(60))   # "Conc(VI 30s, VI 60s)"
-b.chained(b.fr(5), b.fi(30))       # "Chain(FR 5, FI 30s)"
-b.with_annotation(b.fr(5), '@reinforcer("food")')
-#   'FR 5 @reinforcer("food")'
-```
+## AI のコーディングエージェント向け
 
-### CLI
+AI のコーディングエージェント向けの案内は [AGENTS.md](AGENTS.md) にあります。
+
+## 開発
 
 ```bash
-schedule-writer --help
-schedule-writer build fr 5
-schedule-writer build vi 30
-schedule-writer build conc "VI 30s" "VI 60s"
-schedule-writer interactive
+python -m venv .venv
+.venv/bin/python -m pip install git+https://github.com/OperantKit/contingency-dsl-py
+.venv/bin/python -m pip install -e . pytest pytest-cov hypothesis
+.venv/bin/pytest
 ```
 
-### スタンドアロン HTML（フォーム型）
+`[test]` と `[dev]` の extra は、まだ PyPI に無い公開版の contingency-dsl-py を求めるので、上のようにテストの道具を名前で入れます。両方の README の `python` ブロックはすべて `tests/test_readme_examples.py` が実行します。
 
-```bash
-schedule-writer html --output schedule-writer.html
-# schedule-writer.html を任意のブラウザで開く。オフラインで動作する。
-```
+## ライセンス
 
-### ブロックエディタ HTML（ビジュアルブロック型ドラッグ＆ドロップ）
-
-```bash
-schedule-writer blocks --output schedule-writer-blocks.html
-# 任意のブラウザで開く。左のパレットからブロックをキャンバスへドラッグし、
-# 複合ブロックのスロットに別のブロックを入れ子にドロップする。オフライン動作。
-```
-
-## 出力文法
-
-生成される文字列は `contingency-dsl` の operant 文法に従う。
-時間領域スケジュールはデフォルトで単位接尾辞 (`s`, `ms`, `min`) を
-付加する; 比率領域スケジュールは単純な数値を発する (`FR 5`, `VR 20`)。
-複合スケジュールは正典コンビネータ名を使う: `Conc`, `Mult`, `Chain`,
-`Tand`, `Alt`。
-
-## ステータス
-
-Alpha。ビルダ API は DSL の表層構文を反映するが、結果を形式文法に
-対してパース・検証することは自身で行わない。コンシューマは出力を
-下流パーサへの入力テキストとして扱うべき。
+MIT。[LICENSE](LICENSE) を参照してください。
