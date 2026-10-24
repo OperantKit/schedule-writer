@@ -30,7 +30,7 @@ CLI: `schedule-writer build conc "VI 30s" "VI 60s"`. Offline editors: `schedule-
 ## Related packages
 
 - [contingency-dsl](https://github.com/OperantKit/contingency-dsl): the schedule language specification
-- [contingency-dsl-py](https://github.com/OperantKit/contingency-dsl-py): parser that validates the generated strings (`pip install contingency-dsl-py`)
-- [contingency-py](https://github.com/OperantKit/contingency-py): runs the parsed schedule (`pip install contingency-py`)
+- [contingency-dsl-py](https://github.com/OperantKit/contingency-dsl-py): parser that validates the generated strings
+- [contingency-py](https://github.com/OperantKit/contingency-py): runs the parsed schedule
 - [schedule-visualizer](https://github.com/OperantKit/schedule-visualizer): dry-run timeline of a schedule string
 - [contingency-dsl2procedure](https://github.com/OperantKit/contingency-dsl2procedure): turns the schedule into Method-section text
