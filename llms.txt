@@ -24,7 +24,7 @@ CLI: `schedule-writer build conc "VI 30s" "VI 60s"`. Offline editors: `schedule-
 
 ## Docs
 
-- [README](https://github.com/OperantKit/schedule-writer/blob/main/README.md): components, 30-second example, why not to write DSL strings by hand, output grammar
+- [README](https://github.com/OperantKit/schedule-writer/blob/main/README.md): components, example, why not to write DSL strings by hand, output grammar
 - [AGENTS.md](https://github.com/OperantKit/schedule-writer/blob/main/AGENTS.md): when to use this package and what not to do
 
 ## Related packages
